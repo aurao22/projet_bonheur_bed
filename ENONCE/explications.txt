@@ -1,0 +1,24 @@
+Représenter le dataset de manière professionnel
+
+Nettoyage :
+- Traiter les outliers
+- 
+
+Plotly
+
+K-Mean : 
+- trouver le K optimal => faire un graphe
+- si hésitation entre 3 et 4, analyse avec 3 et 4 clusters 
+- afficher les valeurs inertie pour prendre décision
+
+Lorsque les clusters sont décidés, préciser les caractéristiques qui les différencient :
+- le cluster 1 est présenté par tel et tel informations, valeurs élevées de ...
+- le cluster 2 est présenté par tel et tel informations, valeurs élevées de ...
+- le cluster 3 est présenté par tel et tel informations, valeurs élevées de ...
+
+Visualiser les clusters
+- voir s'il y a une intersection entre les clusters
+- ils doivent être séparés
+- lister les pays par cluster
+
+Faire une MAP avec 3 clusters

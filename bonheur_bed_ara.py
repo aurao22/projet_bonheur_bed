@@ -75,7 +75,18 @@ def load_scores_files(score_dataset_filenames, data_set_path, country_col_name =
         cols_names.insert(0, country_official_name)
         cols_names.insert(1, country_col_name)
         df_temp = df_temp[cols_names]
-        df_temp = df_temp.sort_values(by=country_official_name)
+        try:
+            df_temp = df_temp.sort_values(by=["rank"])
+        except:
+            pass
+        
+        # Il faut traiter les doublons dès maintenant pour éviter des soucis dans la suite des traitements, donc pour les pays : `Republic of Cyprus` et `Kingdom of Sweden`
+        previous_size = df_temp.shape[0]
+        if verbose:
+            print(df_temp.duplicated(subset=[country_official_name]))
+        df_temp = df_temp.drop_duplicates(subset=[country_official_name], keep="first")
+        if verbose:
+            print(f"{score_file_name} before drop duplicated on {country_official_name} : {previous_size}, AFTER : {df_temp.shape[0]} => {previous_size-df_temp.shape[0]} rows DELETED")
 
         df_temp2 = df_temp.copy()
 
@@ -180,6 +191,141 @@ def load_scores_files(score_dataset_filenames, data_set_path, country_col_name =
 
     return df_origine_light, df_origine_by_line, df_origine
 
+def score_by_columns_complete_with_historic_score(df_score_by_col,df_evolution_orgin, country_official_col_name="country_official", verbose = 0):
+    
+    # Fusion des FD
+    df_light_merged = df_score_by_col.merge(df_evolution_orgin, on=country_official_col_name, how="outer", indicator=True)
+    df_light_merged = df_light_merged.rename(columns={"country":"country_FR"})
+    if verbose:
+        print(f"INPUT : {df_score_by_col.shape}, {df_evolution_orgin.shape} MERGE = {df_light_merged.shape}")
+        if verbose>1:
+            print(list(df_light_merged.columns))
+    if verbose>1:
+        print("Trie des données par pays")
+    df_light_merged = df_light_merged.sort_values(by=country_official_col_name)
+    if verbose>1:
+        print("Reset index")
+    df_light_merged = df_light_merged.reset_index()
+    df_light_merged = df_light_merged.drop("index", axis=1)
+
+    # Il faut supprimer les doublons
+    if verbose>1:
+        print("Suppression des doublons")
+    df_light_merged["NB_NA"] = df_light_merged.isna().sum(axis=1)
+    df_light_merged = df_light_merged.sort_values(by="NB_NA", ascending=True)
+    df_light_merged = df_light_merged.drop_duplicates(subset=[country_official_col_name], keep="first")
+    df_light_merged = df_light_merged.drop(columns=["NB_NA"])
+    if verbose:
+        print(f"OUTPUT {df_light_merged.shape}")
+    return df_light_merged
+
+def score_by_columns_fill_na_datas(df_light_merged, verbose=0):
+    # Complément des données manquantes
+    for y in range (2019, 2021):
+        if verbose:
+            print(f"{y} : {df_light_merged[str(y)].isna().sum()} NA and score_{str(y)} : {df_light_merged['score_'+str(y)].isna().sum()}", end="")
+        df_light_merged[str(y)] = df_light_merged[str(y)].fillna(df_light_merged["score_"+str(y)])
+        df_light_merged["score_"+str(y)] = df_light_merged["score_"+str(y)].fillna(df_light_merged[str(y)])
+        if verbose:
+            print(f" => AFTER {y} : {df_light_merged[str(y)].isna().sum()} NA and score_{str(y)} : {df_light_merged['score_'+str(y)].isna().sum()}")
+
+    if verbose:
+        print(f"country_origin : {df_light_merged['country_origin'].isna().sum()} NA", end="")
+    df_light_merged["country_origin"] = df_light_merged["country_origin"].fillna(df_light_merged["country_FR"])
+    if verbose: print(f" => AFTER country_origin : {df_light_merged['country_origin'].isna().sum()} NA")
+
+    df_light_merged_clean = df_light_merged[~((df_light_merged["_merge"]=="right_only") & (df_light_merged["2019"].isna()) & (df_light_merged["2020"].isna()))]
+    if verbose:
+        print(f"right_only : {df_light_merged.shape} => AFTER {df_light_merged_clean.shape}")
+    
+    return df_light_merged_clean
+
+def score_by_columns_organise_columns(df_light_merged, verbose=0):
+    # Réorganisation des colonnes
+    cols_names = list(df_light_merged.columns)
+    cols_names.remove('country_FR')
+    init_pos = 3
+    for i in range(2015, 2021, 1):
+        c_n = 'score_'+str(i)
+        c_n2 = c_n
+        if i > 2018:
+            c_n2 = str(i)
+            cols_names.remove(c_n2)
+            cols_names.insert(init_pos, c_n2)
+            init_pos += 1
+            c_n2 = c_n
+        else:
+            c_n2 = str(i)
+            df_light_merged = df_light_merged.rename(columns={c_n: c_n2})
+        cols_names.remove(c_n)
+        cols_names.insert(init_pos, c_n2)
+        init_pos += 1
+        
+    # score_2015	score_2016	score_2017	score_2018	score_2019	score_2020
+    cols_names.insert(3, 'country_FR')
+    cols_names.remove("_merge")
+    df_light_merged = df_light_merged[cols_names]
+    return df_light_merged
+
+def score_by_line_complete_with_historic_score(df_evolution_orgin, df_origine_by_line, verbose=0):
+    # copie des données initiales
+    if verbose:
+        print("INPUT",df_origine_by_line.shape," dont score NA :", df_origine_by_line["score"].isna().sum())
+    df_light_completed_by_line = df_origine_by_line[df_origine_by_line["score"].notna()].copy()
+    df_evolution_orgin_by_line = df_evolution_orgin.copy()
+
+    # Ajout des données du fichier historique des scores
+    for i in range (2015, 2021):
+        # Création d'une DF temporaire pour inverser les valeurs
+        df_temp = df_evolution_orgin_by_line[['country', 'country_official', 'score_'+str(i)]].copy()
+        df_temp = df_temp[df_temp['score_'+str(i)].notna()]
+        df_temp["year"] = i
+        df_temp = df_temp.rename(columns={'score_'+str(i):"score"})
+        # on supprime les valeurs na
+        if verbose>1:
+            print(i, "score NA :", df_temp["score"].isna().sum(), end="")
+        df_temp = df_temp[df_temp["score"].notna()]
+        if verbose>1:
+            print(" - AFTER NA :", df_temp["score"].isna().sum())
+
+        # Concaténation des DF pour avoir une seule DF finale
+        df_light_completed_by_line = pd.concat([df_light_completed_by_line, df_temp])
+
+    if verbose:
+        print("OUTPUT",df_light_completed_by_line.shape," dont score NA :", df_light_completed_by_line["score"].isna().sum())
+    return df_light_completed_by_line
+
+def fill_na_regional_indicator(df_param, verbose=0):
+
+    # copie des données initiales
+    df = df_param.copy()
+    regions_group = df[df['Regional indicator'].notna()].groupby(['country_official', 'Regional indicator']).agg({'Regional indicator':['count']})
+    regions_group = regions_group.reset_index()
+    regions_group.columns = regions_group.columns.droplevel()
+    regions_group.columns = ['country_official', 'Regional indicator2',"count Regional indicator"]
+    regions_group = regions_group.sort_values(by=['count Regional indicator'], ascending=False)
+    
+    if verbose>1:
+        print("nb_regions : ", regions_group.shape, end="")
+
+    regions_group = regions_group.drop_duplicates(subset=["country_official"], keep="first")
+    regions_group = regions_group.drop("count Regional indicator", axis=1)
+
+    if verbose>1:
+        print(" after drop duplicated : ", regions_group.shape)
+
+    # Fusion des DF
+    df = df.merge(regions_group, on="country_official", how="left", indicator=False)
+
+    if verbose:
+        print("INPUT Regional indicator NA : ",df["Regional indicator"].isna().sum(), end="")
+    df["Regional indicator"] = df["Regional indicator"].fillna(df["Regional indicator2"])    
+    if verbose:
+        print(" => OUTPUT : ",df["Regional indicator"].isna().sum())
+
+    # Suppression de la colonne ajoutée
+    df = df.drop(["Regional indicator2"], axis=1)
+    return df
 
 def merge_and_clean_country_by_year(df, start=2019, end=2022, verbose=0):
     nb_years = end - start
@@ -238,12 +384,15 @@ def df_correct_type_to_float(df_param, rounded=3, exclude_cols=[], verbose=0):
     
     for c_n in cols:
         try:
-            df[c_n] = df[c_n].str.replace(",", ".")
+            df[c_n] = df[c_n].str.replace(",", ".", regex=False)
             df[c_n] = df[c_n].astype(float)            
             if rounded is not None:
                 df[c_n] = df[c_n].apply(lambda x: round(x, rounded))
         except:
-            pass
+            try:
+                df[c_n] = df[c_n].str.replace(".", ",", regex=False)
+            except:
+                pass
     return df
 
 # ----------------------------------------------------------------------------------
