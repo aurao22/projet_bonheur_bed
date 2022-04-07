@@ -21,6 +21,20 @@ def get_country_name(current_name, verbose=0):
         official_name = current_name
     return official_name
 
+def df_remove_duplicated_switch_NA(df, subset=['country_official', 'year'], keep="first", verbose=0):
+    df_global_clean = df.copy()
+    if verbose:
+        print(f"Suppression des lignes dupliquées {df_global_clean[df_global_clean.duplicated(subset=subset)].shape} > {df_global_clean.shape}")
+    # Suppression des lignes en doublon
+    df_global_clean["NB_NA"] = df_global_clean.isna().sum(axis=1)
+    df_global_clean = df_global_clean.sort_values("NB_NA", ascending=True)
+    df_global_clean = df_global_clean.drop_duplicates(subset=subset, keep=keep)
+    df_global_clean = df_global_clean.drop(columns=["NB_NA"])
+    if verbose:
+        print(f"{df_global_clean[df_global_clean.duplicated(subset=subset)].shape} > {df_global_clean.shape}")
+    return df_global_clean
+
+
 def complete_df_with_country_datas(df_param, country_col_name="pays", verbose=0):
     # Ajout de la colonne country
     df = None
@@ -28,6 +42,118 @@ def complete_df_with_country_datas(df_param, country_col_name="pays", verbose=0)
         df = df_param.copy()
         df["country_official"] = df[country_col_name].apply(lambda x : get_country_name(x, verbose=verbose))
     return df
+
+def merge_generic_world_data_files(world_datas_files, df_global_completed, data_set_path,country_official_col_name='country_official',country_col_name='country',world_start_with="world_" , verbose=0):
+    proceed = set()
+    not_proceed = set(world_datas_files.copy())
+
+    dic_world_df = {}
+    for file_name in world_datas_files:
+        try:
+            df_temp = pd.read_csv(data_set_path+file_name, sep=',')
+            if verbose:
+                print(f"{file_name}==>{df_temp.shape} : ", end="")
+                if verbose>1:
+                    print(f"{list(df_temp.columns)}")
+            prefix = file_name.replace(world_start_with, "").replace(".csv", "")
+            to_drop_cols = set()
+            cols = list(df_temp.columns)
+
+            if "gini" in prefix.lower() or "Intentional homicide victims".lower() in prefix.lower() or "Subgroup" in cols or "Subgroup".lower() in cols:
+                not_proceed.add(file_name)
+                if verbose:
+                    print("NOT PROCEED")
+            else:
+                merged_cols = [country_official_col_name]
+                for c in cols:
+                    # Country or Area	Year	Area	Sex	Record Type	Reliability	Source Year	Value
+                    if "Country or Area".lower() == c.lower() or "Country or Territory".lower() == c.lower():
+                        df_temp = df_temp.rename(columns={c:country_col_name})
+                    else:
+                        if "year" == c.lower():
+                            df_temp = df_temp.rename(columns={c:c.lower()})
+                            merged_cols.append(c.lower())
+                        elif "value" == c.lower() or "Annual".lower() == c.lower():  
+                            try:
+                                df_temp.loc[df_temp[c]=="-9999.9", c] = np.nan
+                            except:
+                                pass
+                            try:
+                                df_temp.loc[df_temp[c]==-9999.9, c] = np.nan
+                            except:
+                                pass
+                            df_temp = df_temp.rename(columns={c:prefix})
+                        elif "Annual NCDC Computed Value".lower() == c.lower(): 
+                            try:
+                                df_temp.loc[df_temp[c]=="-9999.9", c] = np.nan
+                            except:
+                                pass
+                            try:
+                                df_temp.loc[df_temp[c]==-9999.9, c] = np.nan
+                            except:
+                                pass 
+                            df_temp = df_temp.rename(columns={c:prefix+" NCDC Computed"})
+                        else:
+                            to_drop_cols.add(c)
+
+                try:
+                    # On ne garde que les lignes de total
+                    df_temp = df_temp[df_temp["Area"] == "Total"]
+                except :
+                    pass
+
+                try:
+                    v = list(df_temp["Sex"].unique())
+                    if "Both Sexes" in v:
+                        df_temp = df_temp[df_temp["Sex"] == "Both Sexes"]
+                except:
+                    pass
+
+                if verbose>1:
+                    print(f"{file_name}==>{df_temp.shape} : {list(df_temp.columns)}")
+                df_temp = complete_df_with_country_datas(df_temp[df_temp[country_col_name].notna()], country_col_name=country_col_name, verbose=0)
+                
+                if len(world_datas_files)>1:
+                    to_drop_cols.add(country_col_name)
+
+                if verbose>1:
+                    print(f"{file_name}==>{df_temp.shape} : {list(df_temp.columns)}")
+                    print(f"{file_name}==>Suppression des colonnes inutiles :{to_drop_cols}")
+                
+                for c in to_drop_cols:
+                    df_temp = df_temp.drop(c, axis=1)
+
+                # Suppression des lignes en doublon
+                df_temp = df_remove_duplicated_switch_NA(df_temp,subset=list(df_temp.columns), keep="first", verbose=verbose-1)
+                               
+                # Fusion avec la DF Globale
+                try:
+                    try:
+                        df_temp["year"] = df_temp["year"].astype(int)
+                    except:
+                        pass
+                    if verbose:
+                        if verbose>1:
+                            print(f"{file_name}==>{df_temp.shape} : {list(df_temp.columns)}")
+                        print(f"GLOBAL DF ==>{df_global_completed.shape}", end="")
+                    df_global_completed = df_global_completed.merge(df_temp, how='left', on=merged_cols, indicator=len(world_datas_files)==1)
+                    proceed.add(file_name)
+
+                    df_global_completed = df_remove_duplicated_switch_NA(df_global_completed,subset=['country_official', 'year'], keep="first", verbose=verbose-1)
+                    
+                    if verbose:
+                        print(f" ==>{df_global_completed.shape}")
+                except Exception as error:
+                    print(f"{file_name}==> MERGE with Global DF FAIL : {error}")
+                dic_world_df[file_name] = df_temp
+        except Exception as error:
+            print(f"{file_name}==>{error}")
+
+    try:
+        df_global_completed = df_global_completed.sort_values(['country_official', 'year'])
+    except Exception as error:
+        print(f"FAIL to convert year to INT : {error}")
+    return df_global_completed, dic_world_df, proceed, not_proceed
 
 
 def load_scores_files(score_dataset_filenames, data_set_path, country_col_name = "country", country_official_name = 'country_official', score_rapport_with="Rapport-bonheur-", verbose=0):
@@ -191,81 +317,43 @@ def load_scores_files(score_dataset_filenames, data_set_path, country_col_name =
 
     return df_origine_light, df_origine_by_line, df_origine
 
-def score_by_columns_complete_with_historic_score(df_score_by_col,df_evolution_orgin, country_official_col_name="country_official", verbose = 0):
+
+def score_by_line_merge_official_historic(df_official_historic, df_score_by_line, verbose=0):
+    # Concaténation des DF pour avoir une seule DF finale
+    df_light_completed_by_line_v1 = pd.concat([df_official_historic, df_score_by_line])
+    df_light_completed_by_line_v1 = df_light_completed_by_line_v1.sort_values(["country_official", "year"])
+
+    if verbose:
+        print(f"Suppression des NA sur le score : {df_light_completed_by_line_v1.shape}", end="")
+    df_light_completed_by_line_v1 = df_light_completed_by_line_v1[df_light_completed_by_line_v1["score"].notna()]
+    if verbose:
+        print(f" => {df_light_completed_by_line_v1.shape}")
+
+    if verbose:
+        print(f"Suppression des lignes dupliquées : {df_light_completed_by_line_v1.shape}", end="")
+    df_light_completed_by_line_v1["NB_NA"] = df_light_completed_by_line_v1.isna().sum(axis=1)
+    df_light_completed_by_line_v1 = df_light_completed_by_line_v1.sort_values("NB_NA", ascending=True)
+    df_light_completed_by_line_v1 = df_light_completed_by_line_v1.drop_duplicates(subset=['country_official', 'year'], keep="first")
+    df_light_completed_by_line_v1 = df_light_completed_by_line_v1.drop(columns=["NB_NA"])
     
-    # Fusion des FD
-    df_light_merged = df_score_by_col.merge(df_evolution_orgin, on=country_official_col_name, how="outer", indicator=True)
-    df_light_merged = df_light_merged.rename(columns={"country":"country_FR"})
     if verbose:
-        print(f"INPUT : {df_score_by_col.shape}, {df_evolution_orgin.shape} MERGE = {df_light_merged.shape}")
-        if verbose>1:
-            print(list(df_light_merged.columns))
-    if verbose>1:
-        print("Trie des données par pays")
-    df_light_merged = df_light_merged.sort_values(by=country_official_col_name)
-    if verbose>1:
-        print("Reset index")
-    df_light_merged = df_light_merged.reset_index()
-    df_light_merged = df_light_merged.drop("index", axis=1)
+        print(f" => {df_light_completed_by_line_v1.shape}")
 
-    # Il faut supprimer les doublons
-    if verbose>1:
-        print("Suppression des doublons")
-    df_light_merged["NB_NA"] = df_light_merged.isna().sum(axis=1)
-    df_light_merged = df_light_merged.sort_values(by="NB_NA", ascending=True)
-    df_light_merged = df_light_merged.drop_duplicates(subset=[country_official_col_name], keep="first")
-    df_light_merged = df_light_merged.drop(columns=["NB_NA"])
+    # Réorganisation des données
+    df_light_completed_by_line_v1 = score_by_line_clean_index_and_sort(df_light_completed_by_line_v1, verbose=verbose)
+    return df_light_completed_by_line_v1
+
+def score_by_line_clean_index_and_sort(df, verbose=0):
+    # Réorganisation des données
     if verbose:
-        print(f"OUTPUT {df_light_merged.shape}")
-    return df_light_merged
-
-def score_by_columns_fill_na_datas(df_light_merged, verbose=0):
-    # Complément des données manquantes
-    for y in range (2019, 2021):
-        if verbose:
-            print(f"{y} : {df_light_merged[str(y)].isna().sum()} NA and score_{str(y)} : {df_light_merged['score_'+str(y)].isna().sum()}", end="")
-        df_light_merged[str(y)] = df_light_merged[str(y)].fillna(df_light_merged["score_"+str(y)])
-        df_light_merged["score_"+str(y)] = df_light_merged["score_"+str(y)].fillna(df_light_merged[str(y)])
-        if verbose:
-            print(f" => AFTER {y} : {df_light_merged[str(y)].isna().sum()} NA and score_{str(y)} : {df_light_merged['score_'+str(y)].isna().sum()}")
-
+        print(f"Trie des données", end="")
+    df = df.sort_values(["country_official", "year"])
+    df = df.reset_index()
+    df = df.drop("index", axis=1)
     if verbose:
-        print(f"country_origin : {df_light_merged['country_origin'].isna().sum()} NA", end="")
-    df_light_merged["country_origin"] = df_light_merged["country_origin"].fillna(df_light_merged["country_FR"])
-    if verbose: print(f" => AFTER country_origin : {df_light_merged['country_origin'].isna().sum()} NA")
+        print(f".... END")
+    return df
 
-    df_light_merged_clean = df_light_merged[~((df_light_merged["_merge"]=="right_only") & (df_light_merged["2019"].isna()) & (df_light_merged["2020"].isna()))]
-    if verbose:
-        print(f"right_only : {df_light_merged.shape} => AFTER {df_light_merged_clean.shape}")
-    
-    return df_light_merged_clean
-
-def score_by_columns_organise_columns(df_light_merged, verbose=0):
-    # Réorganisation des colonnes
-    cols_names = list(df_light_merged.columns)
-    cols_names.remove('country_FR')
-    init_pos = 3
-    for i in range(2015, 2021, 1):
-        c_n = 'score_'+str(i)
-        c_n2 = c_n
-        if i > 2018:
-            c_n2 = str(i)
-            cols_names.remove(c_n2)
-            cols_names.insert(init_pos, c_n2)
-            init_pos += 1
-            c_n2 = c_n
-        else:
-            c_n2 = str(i)
-            df_light_merged = df_light_merged.rename(columns={c_n: c_n2})
-        cols_names.remove(c_n)
-        cols_names.insert(init_pos, c_n2)
-        init_pos += 1
-        
-    # score_2015	score_2016	score_2017	score_2018	score_2019	score_2020
-    cols_names.insert(3, 'country_FR')
-    cols_names.remove("_merge")
-    df_light_merged = df_light_merged[cols_names]
-    return df_light_merged
 
 def score_by_line_complete_with_historic_score(df_evolution_orgin, df_origine_by_line, verbose=0):
     # copie des données initiales
@@ -369,7 +457,6 @@ def merge_and_clean_country_by_year(df, start=2019, end=2022, verbose=0):
         
     df_origine_light_completed2 = df_origine_light_completed2[cols]
     return df_origine_light_completed2
-
 
 
 def df_correct_type_to_float(df_param, rounded=3, exclude_cols=[], verbose=0):
@@ -520,3 +607,23 @@ def draw_correlation_graphe(df, title, verbose=False, annot=True, fontsize=5):
     plt.xticks(rotation=45, ha="right", fontsize=fontsize)
     plt.yticks(fontsize=fontsize)
     plt.show()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                                              TESTS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if __name__ == "__main__":
+    # Bolivie
+
+    pays = ['Bolivie', 'Congo (Kinshasa)', 'Congo (RDC)', 'Eswatini', 'Iran',
+       'Laos', 'Moldavie', 'Corée du Sud', 'Palestine', 'Syrie', 'Taïwan',
+       'Tanzanie', 'Venezuela', 'Viêt Nam']
+    for p in pays:
+        print(get_country_name(current_name=p, verbose=1))
+    print("END")
+
+
+    pays = ["Bolivia","Czech Republic","Iran","Kosovo","Laos","Moldova","Somaliland region","South Korea","Syria","Taiwan Province of China","Tanzania","Venezuela","Vietnam"]
+    for p in pays:
+        print(get_country_name(current_name=p, verbose=1))
+    print("END")

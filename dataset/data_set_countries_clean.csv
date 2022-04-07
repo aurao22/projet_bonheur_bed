@@ -41,7 +41,7 @@ id,alpha3,alpha2,country,country_official,continent_code,latitude,longitude
 ,GLP,GP,Guadeloupe,Guadeloupe,NA,47.820913950000005,6.381667499905085
 400,JOR,JO,Jordan,Hashemite Kingdom of Jordan,AS,30.585164,36.238414
 300,GRC,GR,Greece,Hellenic Republic,EU,47.8775107,16.4485113
-,VAT,VA,Holy See,Holy See,EU,45.9313458,18.9354008
+,EU,VA,Holy See,Holy See (Vatican City State),VAT,-49.349365250000005,70.21881399999998
 ,HKG,HK,Hong Kong,Hong Kong Special Administrative Region of China,AS,-34.5715161,-59.112622
 348,HUN,HU,Hungary,Hungary,EU,45.785107,18.2013497
 598,PNG,PG,Papua New Guinea,Independent State of Papua New Guinea,OC,,
@@ -183,7 +183,7 @@ id,alpha3,alpha2,country,country_official,continent_code,latitude,longitude
 642,ROU,RO,Romania,Romania,EU,-11.1158342,-63.62133592790977
 643,RUS,RU,Russia,Russian Federation,EU,51.454989,-2.6072791
 646,RWA,RW,Rwanda,Rwandese Republic,AF,-7.2394093,112.6259862
-,REU,RE,Reunion,Réunion,AF,-21.1306889,55.5264794
+,AF,RE,Reunion,Réunion,AF,-21.1306889,55.5264794
 ,KNA,KN,Saint Kitts and Nevis,Saint Kitts and Nevis,NA,17.2561791,-62.7019638
 ,LCA,LC,Saint Lucia,Saint Lucia,NA,48.2138124,16.40883259303418
 ,VCT,VC,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,NA,13.252818,-61.197096
@@ -206,9 +206,9 @@ id,alpha3,alpha2,country,country_official,continent_code,latitude,longitude
 826,GBR,GB,United Kingdom,United Kingdom of Great Britain and Northern Ireland,EU,52.3555177,-1.1743197
 484,MEX,MX,Mexico,United Mexican States,NA,51.02788945,6.932443829322667
 834,TZA,TZ,United Republic of Tanzania,United Republic of Tanzania,AF,13.4317082,44.0520699
-,UMI,UM,United States Minor Outlying Islands,United States Minor Outlying Islands,NA,43.4806112,-1.5589001
+,UMI,UM,United States Minor Outlying Islands,United States Minor Outlying Islands,UMI,,
 840,USA,US,United States of America,United States of America,NA,47.7335103,-0.1219697
-,ESH,EH,Western Sahara,Western Sahara,AF,35.9567816,66.428255
-,YUG,YU,Yugoslavia,Yugoslavia,EU,-28.3631948,-49.2851937
+,ESH,EH,Western Sahara,Western Sahara,ESH,,
+,EU,YU,Yugoslavia,Yugoslavia,YUG,,
 232,ERI,ER,Eritrea,the State of Eritrea,AF,40.4642773,19.4895974
 275,PSE,PS,West Bank,the State of Palestine,AS,31.947351,35.227163
