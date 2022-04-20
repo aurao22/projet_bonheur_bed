@@ -9,7 +9,8 @@ import pandas as pd
 import sys
 sys.path.append("C:\\Users\\User\\WORK\\workspace-ia\\PERSO\\")
 sys.path.append("C:\\Users\\User\\WORK\\workspace-ia\\PERSO\\ara_commons\\")
-from countries.country_constants import get_country_data, get_country_official_name
+from ara_commons.countries.country_constants import get_country_data, get_country_official_name
+from ara_commons.ara_df import remove_na_columns
 
 # ----------------------------------------------------------------------------------
 #                        SPECIFIC BONHEUR
@@ -51,6 +52,46 @@ def merge_generic_world_data_files(world_datas_files, df_global_completed, data_
     for file_name in world_datas_files:
         try:
             df_temp = pd.read_csv(data_set_path+file_name, sep=',')
+
+            if verbose:
+                print(f"{file_name}==>{df_temp.shape} : ", end="")
+                if verbose>1:
+                    print(f"{list(df_temp.columns)}")
+            prefix = file_name.replace(world_start_with, "").replace(".csv", "")
+            cols = list(df_temp.columns)
+
+            if "gini" in prefix.lower() or "Intentional homicide victims".lower() in prefix.lower() or ("Subgroup" in cols and not "Women_Par_100_Men".lower() in prefix.lower()) or "Subgroup".lower() in cols:
+                if verbose:
+                    print("NOT PROCEED")
+            else:        
+                # Fusion avec la DF Globale
+                try:
+                    df_global_completed, df_temp = merge_generic_world_df(df_temp, df_global_completed, prefix,country_official_col_name=country_official_col_name,country_col_name=country_col_name, verbose=verbose)
+                    proceed.add(file_name)
+                    if verbose:
+                        print(f" ==>{df_global_completed.shape}")
+                except Exception as error:
+                    print(f"{file_name}==> MERGE with Global DF FAIL : {error}")
+                dic_world_df[file_name] = df_temp
+        except Exception as error:
+            print(f"{file_name}==>{error}")
+    
+    df_global_completed = df_global_completed.sort_values(['country_official', 'year'])
+    
+    for tp in proceed:
+        not_proceed.remove(tp)
+
+    return df_global_completed, dic_world_df, proceed, not_proceed
+
+
+def merge_generic_world_data_files_save(world_datas_files, df_global_completed, data_set_path,country_official_col_name='country_official',country_col_name='country',world_start_with="world_" , verbose=0):
+    proceed = set()
+    not_proceed = set(world_datas_files.copy())
+
+    dic_world_df = {}
+    for file_name in world_datas_files:
+        try:
+            df_temp = pd.read_csv(data_set_path+file_name, sep=',')
             if verbose:
                 print(f"{file_name}==>{df_temp.shape} : ", end="")
                 if verbose>1:
@@ -60,7 +101,6 @@ def merge_generic_world_data_files(world_datas_files, df_global_completed, data_
             cols = list(df_temp.columns)
 
             if "gini" in prefix.lower() or "Intentional homicide victims".lower() in prefix.lower() or "Subgroup" in cols or "Subgroup".lower() in cols:
-                not_proceed.add(file_name)
                 if verbose:
                     print("NOT PROCEED")
             else:
@@ -153,7 +193,96 @@ def merge_generic_world_data_files(world_datas_files, df_global_completed, data_
         df_global_completed = df_global_completed.sort_values(['country_official', 'year'])
     except Exception as error:
         print(f"FAIL to convert year to INT : {error}")
+    for tp in proceed:
+        not_proceed.remove(tp)
     return df_global_completed, dic_world_df, proceed, not_proceed
+
+
+def merge_generic_world_df(df_temp, df_global_completed, prefix,country_official_col_name='country_official',country_col_name='country', verbose=0):
+                
+    to_drop_cols = set()
+    cols = list(df_temp.columns)
+    
+    merged_cols = [country_official_col_name]
+    for c in cols:
+        # Country or Area	Year	Area	Sex	Record Type	Reliability	Source Year	Value
+        if "Country or Area".lower() == c.lower() or "Country or Territory".lower() == c.lower():
+            df_temp = df_temp.rename(columns={c:country_col_name})
+        else:
+            if "year" == c.lower():
+                df_temp = df_temp.rename(columns={c:c.lower()})
+                merged_cols.append(c.lower())
+            elif "value" == c.lower() or "Annual".lower() == c.lower():  
+                try:
+                    df_temp.loc[df_temp[c]=="-9999.9", c] = np.nan
+                except:
+                    pass
+                try:
+                    df_temp.loc[df_temp[c]==-9999.9, c] = np.nan
+                except:
+                    pass
+                df_temp = df_temp.rename(columns={c:prefix})
+            elif "Annual NCDC Computed Value".lower() == c.lower(): 
+                try:
+                    df_temp.loc[df_temp[c]=="-9999.9", c] = np.nan
+                except:
+                    pass
+                try:
+                    df_temp.loc[df_temp[c]==-9999.9, c] = np.nan
+                except:
+                    pass 
+                df_temp = df_temp.rename(columns={c:prefix+" NCDC Computed"})
+            else:
+                to_drop_cols.add(c)
+
+    try:
+        # On ne garde que les lignes de total
+        df_temp = df_temp[df_temp["Area"] == "Total"]
+    except :
+        pass
+
+    try:
+        v = list(df_temp["Sex"].unique())
+        if "Both Sexes" in v:
+            df_temp = df_temp[df_temp["Sex"] == "Both Sexes"]
+    except:
+        pass
+
+    if verbose>1:
+        print(f"{prefix}==>{df_temp.shape} : {list(df_temp.columns)}")
+    df_temp = complete_df_with_country_datas(df_temp[df_temp[country_col_name].notna()], country_col_name=country_col_name, verbose=0)
+    
+    to_drop_cols.add(country_col_name)
+
+    if verbose>1:
+        print(f"{prefix}==>{df_temp.shape} : {list(df_temp.columns)}")
+        print(f"{prefix}==>Suppression des colonnes inutiles :{to_drop_cols}")
+    
+    for c in to_drop_cols:
+        df_temp = df_temp.drop(c, axis=1)
+
+    # Suppression des lignes en doublon
+    df_temp = df_remove_duplicated_switch_NA(df_temp,subset=list(df_temp.columns), keep="first", verbose=verbose-1)
+                    
+    # Fusion avec la DF Globale
+    try:
+        try:
+            df_temp["year"] = df_temp["year"].astype(int)
+        except:
+            pass
+        if verbose:
+            if verbose>1:
+                print(f"{prefix}==>{df_temp.shape} : {list(df_temp.columns)}")
+            print(f"GLOBAL DF ==>{df_global_completed.shape}", end="")
+        df_global_completed = df_global_completed.merge(df_temp, how='left', on=merged_cols, indicator=False)
+        df_global_completed = df_remove_duplicated_switch_NA(df_global_completed,subset=['country_official', 'year'], keep="first", verbose=verbose-1)
+        
+        if verbose:
+            print(f" ==>{df_global_completed.shape}")
+    except Exception as error:
+        print(f"{prefix}==> MERGE with Global DF FAIL : {error}")
+    
+    return df_global_completed, df_temp
 
 
 def load_scores_files(score_dataset_filenames, data_set_path, country_col_name = "country", country_official_name = 'country_official', score_rapport_with="Rapport-bonheur-", verbose=0):
@@ -481,6 +610,217 @@ def df_correct_type_to_float(df_param, rounded=3, exclude_cols=[], verbose=0):
             except:
                 pass
     return df
+
+def load_world_gini_file(data_set_path, file_name, df,subset=['country_official', 'year'], excluded_cols=[], indicator=False, verbose=0):
+    gini_file_path = data_set_path + file_name
+    
+    df_gini = pd.read_csv(gini_file_path, sep=',')
+    df_gini = remove_na_columns(df_gini, max_na=85, excluded_cols=excluded_cols, verbose=verbose-1, inplace=False)
+    df_gini = df_gini[df_gini['Country Name'].notna()]
+    if verbose:
+        print(f"{df_gini.shape} données chargées ------> {list(df_gini.columns)}")
+    df_gini = complete_df_with_country_datas(df_gini, 'Country Name', verbose=verbose-1)
+    df_gini = df_gini.drop(['Country Name','Indicator Name', 'Indicator Code'], axis=1)
+    
+    # Préparation de l'ajout des données
+    years_col_names = list(df_gini.columns)
+    to_keep_cols = ['country_official', 'Country Code']
+
+    for c in to_keep_cols:
+        years_col_names.remove(c)
+
+    # Construction de la seconde DF
+    df_gini2 = None
+    for y in years_col_names:
+        y_cols = to_keep_cols.copy()
+        y_cols.append(y)
+        df_temp = df_gini[y_cols].copy()
+        df_temp["year"] = y
+        df_temp = df_temp.rename(columns= {y:"gini"})
+        df_temp = df_remove_duplicated_switch_NA(df_temp, verbose=verbose-1)
+        try:
+            df_temp["year"] = df_temp["year"].astype(int)
+        except:
+            pass
+        if df_gini2 is None:
+            df_gini2 = df_temp
+        else:
+            df_gini2 = pd.concat([df_gini2,df_temp], axis=0)
+            df_gini2 = df_remove_duplicated_switch_NA(df_gini2,subset=subset, keep="first", verbose=verbose-1)
+    try:
+        df_gini2 = df_correct_type_to_float(df_gini2, rounded=3, exclude_cols=[], verbose=verbose-1)
+    except:
+        pass
+    res =  df.merge(df_gini2, how='left', on=subset, indicator=indicator)
+    res = df_remove_duplicated_switch_NA(res,subset=subset, keep="first", verbose=verbose-1)
+                    
+    return res, df_gini2
+
+
+def load_world_homicide_file(file_path, file_name, df,subset=['country_official', 'year'], excluded_cols=[], indicator=False, verbose=0):
+
+    unit="rate"
+    if unit.lower() not in file_name.lower():
+        unit = "nb"
+        
+    df_origin = pd.read_csv(file_path+file_name, sep=',')
+    df_origin = remove_na_columns(df_origin, max_na=85, excluded_cols=excluded_cols, verbose=verbose-1, inplace=False)
+    df_origin = df_origin[df_origin['Country'].notna()]
+    if verbose:
+        print(f"{df_origin.shape} données chargées ------> {list(df_origin.columns)}")
+    df_origin = complete_df_with_country_datas(df_origin, 'Country', verbose=verbose-1)
+    df_origin = df_origin.drop(['Region', 'Subregion', 'Country','Source'], axis=1)
+
+    # Préparation de l'ajout des données
+    years_col_names = list(df_origin.columns)
+    to_keep_cols = ['country_official']
+    for c in to_keep_cols:
+        try:
+            years_col_names.remove(c)
+        except:
+            pass
+
+    df_gender = None
+    sub_df = []
+    genders_cols_names = []
+    for gender in df_origin["Gender"].unique():
+        selection = df_origin[df_origin["Gender"]==gender].copy()
+        for y in years_col_names:
+            if "Nb_".lower() not in y.lower() and "Gender".lower() not in y.lower():
+                y_cols = to_keep_cols.copy()
+                y_cols.append(y)
+                df_temp = selection[y_cols].copy()
+                df_temp["year"] = y
+                new_name = "intentional homicide victims "+gender+" "+unit
+                df_temp = df_temp.rename(columns= {y:new_name})
+                genders_cols_names.append(new_name)
+                df_temp = df_remove_duplicated_switch_NA(df_temp, verbose=verbose-1)
+                try:
+                    df_temp["year"] = df_temp["year"].astype(int)
+                except:
+                    pass
+                if df_gender is None:
+                    df_gender = df_temp
+                else:
+                    df_gender = pd.concat([df_gender,df_temp], axis=0)
+                    # df_homicide = df_remove_duplicated_switch_NA(df_homicide,subset=subset, keep="first", verbose=verbose-1)
+        sub_df.append(df_gender)
+        df_gender = None
+
+    df_homicide = None
+    for df_gender in sub_df:
+        if df_homicide is None:
+            df_homicide = df_gender
+        else:
+            df_homicide = df_homicide.merge(df_gender, how='outer', on=subset)
+
+    try:
+        df_homicide = df_correct_type_to_float(df_homicide, rounded=3, exclude_cols=[], verbose=verbose-1)
+    except:
+        pass
+    res =  df.merge(df_homicide, how='left', on=subset, indicator=indicator)
+    res = df_remove_duplicated_switch_NA(res,subset=subset, keep="first", verbose=verbose-1)
+
+    # on ne fait la somme que pour les nombres, car le ratio est la part des homicides par sexe et non total pays
+    if "nb" in unit.lower():
+        res["Homicide victime "+unit] = 0
+        for g in genders_cols_names:
+            res["Homicide victime "+unit] = res["Homicide victime "+unit] + res[g]
+    
+    return res, df_homicide
+
+def load_world_population_file(file_path, file_name, df,subset=['country_official', 'year'],excluded_cols=[], indicator=False, verbose=0):
+
+    df_origin = pd.read_csv(file_path+file_name, sep=',')
+    df_origin = remove_na_columns(df_origin, max_na=85, excluded_cols=excluded_cols, verbose=verbose-1, inplace=False)
+    df_origin = df_origin[df_origin['Country or Area'].notna()]
+    try:
+        df_origin = df_origin[df_origin['Subgroup'].notna()]
+    except:
+        pass
+
+    if verbose:
+        print(f"{df_origin.shape} données chargées ------> {list(df_origin.columns)}")
+
+    sub_df = []
+    genders = list(df_origin["Subgroup"].unique())
+    df_global_completed = df.copy()
+    genders_cols_names = []
+    for gender in genders:
+        df_global_completed, df_temp = merge_generic_world_df(df_origin[df_origin["Subgroup"]==gender], df_global_completed, prefix=gender+" Population",country_official_col_name='country_official',country_col_name='country', verbose=verbose)    
+        sub_df.append(df_temp)
+        genders_cols_names.append(gender+" Population")
+
+    df_population = None
+    for df_gender in sub_df:
+        if df_population is None:
+            df_population = df_gender
+        else:
+            df_population = df_population.merge(df_gender, how='outer', on=subset)
+   
+    res = df_remove_duplicated_switch_NA(df_global_completed,subset=subset, keep="first", verbose=verbose-1)
+    
+    # Trouver la chaine commune entre 2 strings
+    common = ""
+    try:
+        common = genders_cols_names[0]
+        end = False
+        while not end:
+            if common in genders_cols_names[1]:
+                end = True
+                common = common.strip()
+            else:
+                if len(common)>1:
+                    common = common[0:-2]
+                else:
+                    common = ""
+                    end = True
+    except:
+        common = ""
+    
+    res[common+"Population"] = 0
+    for g in genders_cols_names:
+        res[common+"Population"] = res[common+"Population"] + res[g]
+
+    return res, df_population
+
+def load_world_unemployment_file(file_path, file_name, df,subset=['country_official', 'year'],excluded_cols=[], indicator=False, verbose=0):
+
+    df_origin = pd.read_csv(file_path+file_name, sep=',')
+    if verbose:
+        print(f"{df_origin.shape} données chargées ------> {list(df_origin.columns)}")
+    
+    df_origin = remove_na_columns(df_origin, max_na=85,excluded_cols=excluded_cols, verbose=verbose-1, inplace=False)
+    if verbose: print('NA columns removed', df_origin.shape)
+    df_origin = df_origin[df_origin['Country or Area'].notna()]
+    if verbose: print('Country or Area NA removed', df_origin.shape)
+    df_origin = df_origin[df_origin['Subgroup'].notna()]
+    if verbose: print('Subgroup NA removed', df_origin.shape)
+    df_origin = df_origin[~df_origin['Subgroup'].str.contains("-24 yr")]
+    if verbose: print('Subgroup -24 yr removed', df_origin.shape)
+
+    sub_df = []
+    genders = list(df_origin["Subgroup"].unique())
+    df_global_completed = df.copy()
+    genders_cols_names = []
+    for gender in genders:
+        df_global_completed, df_temp = merge_generic_world_df(df_origin[df_origin["Subgroup"]==gender], df_global_completed, prefix=gender+" Unemployment rate",country_official_col_name='country_official',country_col_name='country', verbose=verbose)    
+        genders_cols_names.append(gender+" Unemployment rate")
+        sub_df.append(df_temp)
+
+    df_population = None
+    for df_gender in sub_df:
+        if df_population is None:
+            df_population = df_gender
+        else:
+            df_population = df_population.merge(df_gender, how='outer', on=subset)
+   
+    res = df_remove_duplicated_switch_NA(df_global_completed,subset=subset, keep="first", verbose=verbose-1)
+    
+    res["Unemployment rate"] = 0
+    for g in genders_cols_names:
+        res["Unemployment rate"] = res["Unemployment rate"] + res[g]
+    return res, df_population
 
 # ----------------------------------------------------------------------------------
 #                        GENERIC FUNCTIONS

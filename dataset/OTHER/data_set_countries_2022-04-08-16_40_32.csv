@@ -1,0 +1,214 @@
+id,alpha3,alpha2,country,country_official,continent_code,latitude,longitude
+010,ATA,AQ,Antarctica,Antarctica,,-22.01698055,-47.92053262367865
+,ATG,AG,Antigua and Barbuda,Antigua and Barbuda,NA,17.0869391,-61.783491
+818,EGY,EG,Egypt,Arab Republic of Egypt,AF,-5.1359784,119.5254194
+032,ARG,AR,Argentina,Argentine Republic,SA,46.2538904,142.0841389
+036,AUS,AU,Australia,Australia,OC,-34.8092855,138.62094042231251
+,BRB,BB,Barbados,Barbados,NA,13.1901325,-59.5355639
+084,BLZ,BZ,Belize,Belize,NA,51.24574335,7.148364244257176
+862,VEN,VE,Venezuela,Bolivarian Republic of Venezuela,SA,6.42375,-66.58973
+096,BRN,BN,Brunei,Brunei Darussalam,AS,36.6355565,3.9254691
+854,BFA,BF,Burkina Faso,Burkina Faso,AF,14.6866662,121.084352
+124,CAN,CA,Canada,Canada,NA,-17.6912922,24.1377371
+140,CAF,CF,Central African Republic,Central African Republic,AF,22.6010138,88.4188646
+,DMA,DM,Commonwealth of Dominica,Commonwealth of Dominica,NA,46.07128725,14.523876695618853
+044,BHS,BS,The Bahamas,Commonwealth of the Bahamas,NA,13.8041416,100.5399615
+180,COD,CD,Democratic Republic of the Congo,'Congo, The Democratic Republic of the',AF,-4.0335162,21.7500603
+,COK,CK,Cook Islands,Cook Islands,OC,,
+203,CZE,CZ,Czech Republic,Czech Republic,EU,49.817492,15.472962
+408,PRK,KP,North Korea,'Democratic People''s Republic of Korea',AS,52.9761931,18.68493725119398
+,STP,ST,Sao Tome and Principe,Democratic Republic of Sao Tome and Principe,AF,,
+626,TLS,TL,East Timor,Democratic Republic of Timor-Leste,,47.2186371,-1.5541362
+144,LKA,LK,Sri Lanka,Democratic Socialist Republic of Sri Lanka,AS,7.873592,80.773137
+214,DOM,DO,Dominican Republic,Dominican Republic,NA,14.6836252,100.7061712
+858,URY,UY,Uruguay,Eastern Republic of Uruguay,SA,-32.522779,-55.765835
+238,FLK,FK,Falkland Islands,Falkland Islands (Malvinas),SA,30.0058845,-95.3304845
+231,ETH,ET,Ethiopia,Federal Democratic Republic of Ethiopia,AF,38.8335867,30.59031325
+524,NPL,NP,Nepal,Federal Democratic Republic of Nepal,AS,28.394857,84.124008
+276,DEU,DE,Germany,Federal Republic of Germany,EU,49.932519,1.5805979308909812
+566,NGA,NG,Nigeria,Federal Republic of Nigeria,AF,15.2047053,120.7068861
+706,SOM,SO,Somalia,Federal Republic of Somalia,AF,11.7956463,41.0128914
+,FSM,FM,Micronesia,Federated States of Micronesia,OC,,
+076,BRA,BR,Brazil,Federative Republic of Brazil,SA,39.824223,-95.5819952
+,PYF,PF,French Polynesia,French Polynesia,OC,-17.67739793399994,-149.40097329699998
+250,FRA,FR,France,French Republic,EU,46.71109,1.7191036
+260,ATF,TF,French Southern and Antarctic Lands,French Southern Territories,,-29.8160722,-51.4939781
+266,GAB,GA,Gabon,Gabonese Republic,AF,31.5852277,64.3608959
+268,GEO,GE,Georgia,Georgia,AS,27.4844597,94.9019447
+442,LUX,LU,Luxembourg,Grand Duchy of Luxembourg,EU,50.8388307,4.374789654946697
+304,GRL,GL,Greenland,Greenland,NA,31.4932306,-91.8615152
+,GRD,GD,Grenada,Grenada,NA,12.151965053000026,-61.659644958999934
+,GLP,GP,Guadeloupe,Guadeloupe,NA,47.820913950000005,6.381667499905085
+400,JOR,JO,Jordan,Hashemite Kingdom of Jordan,AS,30.585164,36.238414
+300,GRC,GR,Greece,Hellenic Republic,EU,47.8775107,16.4485113
+,EU,VA,Holy See,Holy See (Vatican City State),VAT,-49.349365250000005,70.21881399999998
+,HKG,HK,Hong Kong,Hong Kong Special Administrative Region of China,AS,-34.5715161,-59.112622
+348,HUN,HU,Hungary,Hungary,EU,45.785107,18.2013497
+598,PNG,PG,Papua New Guinea,Independent State of Papua New Guinea,OC,,
+,WSM,WS,Independent State of Samoa,Independent State of Samoa,OC,50.77160085,14.19330482223198
+372,IRL,IE,Ireland,Ireland,EU,53.41291,-8.24389
+004,AFG,AF,Afghanistan,Islamic Republic of Afghanistan,AS,29.27677,42.274721
+364,IRN,IR,Iran,Islamic Republic of Iran,AS,37.9211202,46.6821517
+478,MRT,MR,Mauritania,Islamic Republic of Mauritania,AF,16.981231,44.947902
+586,PAK,PK,Pakistan,Islamic Republic of Pakistan,AS,26.16314305,91.6920681255877
+380,ITA,IT,Italy,Italian Republic,EU,41.87194,12.56738
+388,JAM,JM,Jamaica,Jamaica,NA,50.107222050000004,8.674281573776732
+392,JPN,JP,Japan,Japan,AS,34.886306,134.379711
+,BHR,BH,Bahrain,Kingdom of Bahrain,AS,-37.3223349,-59.1423666
+056,BEL,BE,Belgium,Kingdom of Belgium,EU,46.9467312,7.4414188
+064,BTN,BT,Bhutan,Kingdom of Bhutan,AS,41.93459755,25.56752968036733
+116,KHM,KH,Cambodia,Kingdom of Cambodia,AS,47.214979,20.319102
+208,DNK,DK,Denmark,Kingdom of Denmark,EU,1.288895,103.8465004
+748,SWZ,SZ,Swaziland,Kingdom of Eswatini,AF,,
+426,LSO,LS,Lesotho,Kingdom of Lesotho,AF,31.5496641,64.5522912
+504,MAR,MA,Morocco,Kingdom of Morocco,AF,36.7099311,67.1092145
+578,NOR,NO,Norway,Kingdom of Norway,EU,52.65028005,-7.249520357965058
+682,SAU,SA,Saudi Arabia,Kingdom of Saudi Arabia,AS,43.4518393,-7.9073658
+724,ESP,ES,Spain,Kingdom of Spain,EU,45.9313458,18.9354008
+752,SWE,SE,Sweden,Kingdom of Sweden,EU,49.5789433,6.1099743
+764,THA,TH,Thailand,Kingdom of Thailand,AS,13.5766807,44.0243143
+,TON,TO,Tonga,Kingdom of Tonga,OC,18.4913351,-69.94217666554923
+528,NLD,NL,Netherlands,Kingdom of the Netherlands,EU,25.66509095,94.07638696239748
+410,KOR,KR,South Korea,'Korea, Republic of',AS,38.0129678,46.7718772
+,XXK,XK,Kosovo,Kosovo,EU,,
+417,KGZ,KG,Kyrgyzstan,Kyrgyz Republic,AS,48.19857465,16.369099492754806
+418,LAO,LA,Laos,'Lao People''s Democratic Republic',AS,,
+422,LBN,LB,Lebanon,Lebanese Republic,AS,51.9392181,15.4805726
+434,LBY,LY,Libya,Libya,AF,16.693105,44.937109
+458,MYS,MY,Malaysia,Malaysia,AS,-34.6520674,-58.7911807
+,MTQ,MQ,Martinique,Martinique,NA,10.675141,79.4553714
+496,MNG,MN,Mongolia,Mongolia,AS,43.5414924,-5.6702134
+499,MNE,ME,Montenegro,Montenegro,EU,19.4121639,-99.2211439
+540,NCL,NC,New Caledonia,New Caledonia,OC,44.5326756,7.2605241
+554,NZL,NZ,New Zealand,New Zealand,OC,44.5326756,7.2605241
+,NIU,NU,Niue,Niue,OC,-10.1589454,123.6055523
+012,DZA,DZ,Algeria,'People''s Democratic Republic of Algeria',AF,14.3497288,43.8920244
+050,BGD,BD,Bangladesh,'People''s Republic of Bangladesh',AS,,
+156,CHN,CN,China,'People''s Republic of China',AS,22.3188953,114.1721025
+068,BOL,BO,Bolivia,Plurinational State of Bolivia,SA,43.8906966,-0.6205072
+620,PRT,PT,Portugal,Portuguese Republic,EU,18.505990699999998,-72.28349314515845
+,AND,AD,Principality of Andorra,Principality of Andorra,EU,50.0538964,1.4248279
+,LIE,LI,Principality of Liechtenstein,Principality of Liechtenstein,EU,41.2962005,69.29170351631461
+,MCO,MC,Principality of Monaco,Principality of Monaco,EU,,
+630,PRI,PR,Puerto Rico,Puerto Rico,NA,18.220833,-66.590149
+008,ALB,AL,Albania,Republic of Albania,EU,21.483333,36.066667
+024,AGO,AO,Angola,Republic of Angola,AF,41.795972,12.2351121
+051,ARM,AM,Armenia,Republic of Armenia,AS,40.069099,45.038189
+040,AUT,AT,Austria,Republic of Austria,EU,47.854596400000005,16.66868633401266
+031,AZE,AZ,Azerbaijan,Republic of Azerbaijan,AS,43.58464045,23.113895419740626
+112,BLR,BY,Belarus,Republic of Belarus,EU,50.1131776,9.2525042
+204,BEN,BJ,Benin,Republic of Benin,AF,22.59080025,88.42657234971432
+070,BIH,BA,Bosnia and Herzegovina,Republic of Bosnia and Herzegovina,EU,43.9165389,17.6721508
+072,BWA,BW,Botswana,Republic of Botswana,AF,16.333333,45.116667
+100,BGR,BG,Bulgaria,Republic of Bulgaria,EU,47.8969723,16.5426416
+108,BDI,BI,Burundi,Republic of Burundi,AF,36.761878550000006,3.0257976122277777
+,CPV,CV,Cabo Verde,Republic of Cabo Verde,AF,,
+120,CMR,CM,Cameroon,Republic of Cameroon,AF,40.2905201,-2.8173253
+148,TCD,TD,Chad,Republic of Chad,AF,,
+152,CHL,CL,Chile,Republic of Chile,SA,37.2413155,-96.8675685
+170,COL,CO,Colombia,Republic of Colombia,SA,17.9341443,-76.2700267
+188,CRI,CR,Costa Rica,Republic of Costa Rica,NA,34.7709565,-82.1112186
+191,HRV,HR,Croatia,Republic of Croatia,EU,4.855172850000001,31.586048562962084
+192,CUB,CU,Cuba,Republic of Cuba,NA,15.2055569,120.7074977
+196,CYP,CY,Cyprus,Republic of Cyprus,AS,34.683874849999995,32.605167952003484
+384,CIV,CI,Ivory Coast,'Republic of Côte d''Ivoire',AF,7.5455112,-5.547545
+262,DJI,DJ,Djibouti,Republic of Djibouti,AF,22.6010138,88.4188646
+218,ECU,EC,Ecuador,Republic of Ecuador,SA,-1.831239,-78.183406
+222,SLV,SV,El Salvador,Republic of El Salvador,NA,46.9536959,7.4623052
+226,GNQ,GQ,Equatorial Guinea,Republic of Equatorial Guinea,AF,,
+233,EST,EE,Estonia,Republic of Estonia,EU,58.33880645,22.56753057745843
+242,FJI,FJ,Fiji,Republic of Fiji,OC,,
+246,FIN,FI,Finland,Republic of Finland,EU,61.92411,25.748151
+288,GHA,GH,Ghana,Republic of Ghana,AF,45.420528149999996,23.953581964976415
+320,GTM,GT,Guatemala,Republic of Guatemala,NA,17.4528558,78.6782985
+324,GIN,GN,Guinea,Republic of Guinea,AF,52.4465499,-1.8204915
+624,GNB,GW,Guinea Bissau,Republic of Guinea-Bissau,AF,,
+328,GUY,GY,Guyana,Republic of Guyana,SA,4.796422680000035,-58.97538657499996
+332,HTI,HT,Haiti,Republic of Haiti,NA,45.8206046,-108.4857474
+340,HND,HN,Honduras,Republic of Honduras,NA,51.246016600000004,7.148810609075622
+352,ISL,IS,Iceland,Republic of Iceland,EU,-27.148133,-109.334378
+356,IND,IN,India,Republic of India,AS,26.4073841,93.2551303
+360,IDN,ID,Indonesia,Republic of Indonesia,AS,-4.9435712,137.9589576
+368,IRQ,IQ,Iraq,Republic of Iraq,AS,14.131079,44.386663
+398,KAZ,KZ,Kazakhstan,Republic of Kazakhstan,AS,46.484985449999996,15.97071437343444
+404,KEN,KE,Kenya,Republic of Kenya,AF,-1.21910345,34.51000454719245
+,KIR,KI,Kiribati,Republic of Kiribati,OC,-34.8092855,138.62094042231251
+428,LVA,LV,Latvia,Republic of Latvia,EU,56.6055428,24.5226821
+430,LBR,LR,Liberia,Republic of Liberia,AF,52.28214955,8.023850320357361
+440,LTU,LT,Lithuania,Republic of Lithuania,EU,56.3042261,22.3602737
+450,MDG,MG,Madagascar,Republic of Madagascar,AF,8.9748654,40.14771
+454,MWI,MW,Malawi,Republic of Malawi,AF,-13.254308,34.301525
+,MDV,MV,Maldives,Republic of Maldives,AS,42.6666373,27.7067543
+466,MLI,ML,Mali,Republic of Mali,AF,33.68446575,72.98797611298016
+,MLT,MT,Malta,Republic of Malta,EU,50.0455411,1.4133492
+,MUS,MU,Mauritius,Republic of Mauritius,AF,16.457681,44.672365
+498,MDA,MD,Moldova,Republic of Moldova,EU,47.20102827100004,28.46370618900005
+508,MOZ,MZ,Mozambique,Republic of Mozambique,AF,36.5246043,52.6823917
+104,MMR,MM,Myanmar,Republic of Myanmar,AS,14.319804,46.739215
+516,NAM,NA,Namibia,Republic of Namibia,AF,34.5302341,69.2301795
+,NRU,NR,Nauru,Republic of Nauru,OC,48.45005125,27.747479451065892
+558,NIC,NI,Nicaragua,Republic of Nicaragua,NA,33.151864849999995,-117.18222859480616
+807,MKD,MK,Macedonia,Republic of North Macedonia,EU,41.6137143,1.743258
+,PLW,PW,Palau,Republic of Palau,OC,7.421479662000024,134.511600068
+591,PAN,PA,Panama,Republic of Panama,NA,4.6186651,-74.0923729
+600,PRY,PY,Paraguay,Republic of Paraguay,SA,-23.442503,-58.443832
+604,PER,PE,Peru,Republic of Peru,SA,43.6302615,-1.2015629
+616,POL,PL,Poland,Republic of Poland,EU,50.054200800000004,1.4168346659177702
+,SMR,SM,San Marino,Republic of San Marino,EU,-29.6618767,-53.8113888
+686,SEN,SN,Senegal,Republic of Senegal,AF,-5.1359784,119.5254194
+688,SRB,RS,Republic of Serbia,Republic of Serbia,EU,14.001406,-61.00938444034497
+,SYC,SC,Seychelles,Republic of Seychelles,AF,-27.24680065,-48.63998105
+694,SLE,SL,Sierra Leone,Republic of Sierra Leone,AF,50.4465076,18.8531303
+,SGP,SG,Singapore,Republic of Singapore,AS,-34.44433875,-58.573216957406956
+705,SVN,SI,Slovenia,Republic of Slovenia,EU,49.932519,1.5805979308909812
+710,ZAF,ZA,South Africa,Republic of South Africa,AF,43.02047485,40.94851191578502
+,SDS,SS,South Sudan,Republic of South Sudan,AF,22.5941265,88.4124516
+740,SUR,SR,Suriname,Republic of Suriname,SA,3.9317774090000626,-56.01360780899995
+762,TJK,TJ,Tajikistan,Republic of Tajikistan,AS,37.1687658,10.0337719
+780,TTO,TT,Trinidad and Tobago,Republic of Trinidad and Tobago,NA,10.4437128,-61.4191414
+788,TUN,TN,Tunisia,Republic of Tunisia,AF,-41.3331672,174.8077704
+792,TUR,TR,Turkey,Republic of Turkey,AS,43.38594165,-8.40652415
+800,UGA,UG,Uganda,Republic of Uganda,AF,1.373333,32.290275
+860,UZB,UZ,Uzbekistan,Republic of Uzbekistan,AS,43.3086057,-6.3556698
+548,VUT,VU,Vanuatu,Republic of Vanuatu,OC,-15.241355872999975,166.8727570740001
+887,YEM,YE,Yemen,Republic of Yemen,AS,31.7779986,35.235395049999994
+894,ZMB,ZM,Zambia,Republic of Zambia,AF,32.478718,63.109451
+716,ZWE,ZW,Zimbabwe,Republic of Zimbabwe,AF,-19.015438,29.154857
+178,COG,CG,Republic of the Congo,Republic of the Congo,AF,22.6010138,88.4188646
+270,GMB,GM,Gambia,Republic of the Gambia,AF,,
+,MHL,MH,Marshall Islands,Republic of the Marshall Islands,OC,,
+562,NER,NE,Niger,Republic of the Niger,AF,13.9521158,5.534876646189835
+608,PHL,PH,Philippines,Republic of the Philippines,AS,35.5656545,45.455387
+729,SDN,SD,Sudan,Republic of the Sudan,AF,35.76414005,35.902481298569185
+642,ROU,RO,Romania,Romania,EU,-11.1158342,-63.62133592790977
+643,RUS,RU,Russia,Russian Federation,EU,51.454989,-2.6072791
+646,RWA,RW,Rwanda,Rwandese Republic,AF,-7.2394093,112.6259862
+,AF,RE,Reunion,Réunion,AF,-21.1306889,55.5264794
+,KNA,KN,Saint Kitts and Nevis,Saint Kitts and Nevis,NA,17.2561791,-62.7019638
+,LCA,LC,Saint Lucia,Saint Lucia,NA,48.2138124,16.40883259303418
+,VCT,VC,Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,NA,13.252818,-61.197096
+703,SVK,SK,Slovakia,Slovak Republic,EU,14.08486985,-87.18649723607129
+704,VNM,VN,Vietnam,Socialist Republic of Viet Nam,AS,,
+090,SLB,SB,Solomon Islands,Solomon Islands,OC,-0.52191565,100.23753185000001
+376,ISR,IL,Israel,State of Israel,AS,48.83672,2.2424865
+414,KWT,KW,Kuwait,State of Kuwait,AS,36.228028,44.94875
+634,QAT,QA,Qatar,State of Qatar,AS,36.3425765,43.1529555
+512,OMN,OM,Oman,Sultanate of Oman,AS,42.690317300000004,23.251407828088023
+756,CHE,CH,Switzerland,Swiss Confederation,EU,46.9787347,8.6374022
+760,SYR,SY,Syria,Syrian Arab Republic,AS,34.802075,38.996815
+158,TWN,TW,Taiwan,'Taiwan, Province of China',AS,25.0420743,121.61412260140422
+768,TGO,TG,Togo,Togolese Republic,AF,9.145744950000001,45.951875098949344
+795,TKM,TM,Turkmenistan,Turkmenistan,AS,17.333333,43.816667
+,TUV,TV,Tuvalu,Tuvalu,OC,,
+804,UKR,UA,Ukraine,Ukraine,EU,44.874119,33.151245
+,COM,KM,Union of the Comoros,Union of the Comoros,AF,34.8702632,71.15817392629597
+784,ARE,AE,United Arab Emirates,United Arab Emirates,AS,,
+826,GBR,GB,United Kingdom,United Kingdom of Great Britain and Northern Ireland,EU,52.3555177,-1.1743197
+484,MEX,MX,Mexico,United Mexican States,NA,51.02788945,6.932443829322667
+834,TZA,TZ,United Republic of Tanzania,United Republic of Tanzania,AF,13.4317082,44.0520699
+,UMI,UM,United States Minor Outlying Islands,United States Minor Outlying Islands,UMI,,
+840,USA,US,United States of America,United States of America,NA,47.7335103,-0.1219697
+,ESH,EH,Western Sahara,Western Sahara,ESH,,
+,EU,YU,Yugoslavia,Yugoslavia,YUG,,
+232,ERI,ER,Eritrea,the State of Eritrea,AF,40.4642773,19.4895974
+275,PSE,PS,West Bank,the State of Palestine,AS,31.947351,35.227163
