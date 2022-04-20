@@ -1,3 +1,5 @@
 .~lock.*.ods#
 dataset/.~lock.*
 .~lock.*
+__pycache__/*
+__pycache__/bonheur_bed_ara.cpython-39.pyc
