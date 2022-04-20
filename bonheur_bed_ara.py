@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 from tqdm import tqdm
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 import sys
 sys.path.append("C:\\Users\\User\\WORK\\workspace-ia\\PERSO\\")
 sys.path.append("C:\\Users\\User\\WORK\\workspace-ia\\PERSO\\ara_commons\\")
@@ -839,6 +840,24 @@ def get_dir_files(dir_path, start_with=None, endwith=None, verbose=0):
         else:
             fichiers = [f for f in listdir(dir_path) if isfile(join(dir_path, f))]
     return fichiers
+
+
+def process_one_hot(df, col="description", verbose=0):
+    encoder = OneHotEncoder(sparse=False)
+    transformed = encoder.fit_transform(df[[col]])
+    if verbose:
+        print(transformed)
+    #Create a Pandas DataFrame of the hot encoded column
+    ohe_df = pd.DataFrame(transformed, columns=encoder.get_feature_names_out())
+    if verbose:
+        print("ohe_df:", ohe_df.shape, "data:", df.shape)
+
+    #concat with original data
+    df_completed = df.copy()
+    df_completed = pd.concat([df_completed, ohe_df], axis=1)
+    if verbose:
+        print("ohe_df:", ohe_df.shape, "data:", df.shape, "data_encode:", df_completed.shape)
+    return df_completed
 
 
 def get_numeric_columns_names(df, verbose=False):
