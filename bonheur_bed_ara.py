@@ -823,6 +823,71 @@ def load_world_unemployment_file(file_path, file_name, df,subset=['country_offic
         res["Unemployment rate"] = res["Unemployment rate"] + res[g]
     return res, df_population
 
+
+def get_year_data_mean(df, current_y, current_country, current_data_col_name, verbose=0):
+    val = df.loc[(df['year']==current_y) & (df['country_official']==current_country),current_data_col_name].values[0]
+    if np.isnan(val) or val == 0:
+        c_y_min = np.min(df.loc[df['country_official']==current_country,"year"])
+        c_y_max = np.max(df.loc[df['country_official']==current_country,"year"])
+
+        y_down = current_y-1
+        y_up = current_y+1
+
+        if c_y_min > y_down:
+            # on est déjà à la date minimale, donc on prend la date suivante +1
+            y_down = current_y+2
+
+        if c_y_max < y_up:
+            # on est déjà à la date maximale, donc on prend la date précédente -1
+            y_up = current_y-2
+
+        year_moins = np.nan
+        try:
+            year_moins = df.loc[(df['year']==y_down) & (df['country_official']==current_country),current_data_col_name].values[0]
+        except Exception as error:
+            if verbose>1:
+                print(f"{current_country} - {current_y} - {current_data_col_name} Exception No year less for ({y_down} : {error}")
+            year_moins = np.nan
+
+        year_plus = np.nan
+        try:
+            year_plus = df.loc[(df['year']==y_up) & (df['country_official']==current_country),current_data_col_name].values[0]
+        except Exception as error:
+            if verbose>1:
+                print(f"{current_country} - {current_y} - {current_data_col_name} Exception No year plus for ({y_up} : {error}")
+            year_plus = np.nan
+        
+        if np.isnan(year_plus) and np.isnan(year_moins):
+            if verbose>1:
+                print(f"{current_country} - {current_y} - {current_data_col_name} - no data for {y_down} and {y_up}")
+            try:
+                val = df.loc[(df['country_official']==current_country),current_data_col_name].mean()
+                if verbose:
+                    print(f"{current_country} - {current_y} - {current_data_col_name} new value mean of all datas: {val}")
+            except Exception as error:
+                if verbose:
+                    print(f"{current_country} - {current_y} - {current_data_col_name} Exception on mean({year_plus} and {year_moins}) : {error}")                   
+        else:
+            try:
+                val = np.mean(year_moins, year_plus)
+                if verbose:
+                    print(f"{current_country} - {current_y} - {current_data_col_name} new value mean previous and next year: {val}")
+            except Exception as error:
+                if verbose:
+                    print(f"{current_country} - {current_y} - {current_data_col_name} Exception on mean({year_plus} and {year_moins}) : {error}")
+    else:
+        if verbose:
+            print(f"{current_country} - {current_y} - {current_data_col_name} value : {val} (no change)")
+    return val
+
+def get_df_for_country_data(df, country_official_name):
+    country_datas_df = df[df['country_official']==country_official_name].copy()
+    country_datas_df = country_datas_df.drop(['continent_encode','continent_code_AF', 'continent_code_AS', 'continent_code_EU',
+       'continent_code_NA', 'continent_code_OC', 'continent_code_SA'], axis=1)
+    country_datas_df = country_datas_df.set_index('year')
+    return country_datas_df
+
+
 # ----------------------------------------------------------------------------------
 #                        GENERIC FUNCTIONS
 # ----------------------------------------------------------------------------------
@@ -897,6 +962,316 @@ def get_outliers_datas(df, colname):
     return q_low, q_hi,iqr, q_min, q_max
 
 
+def display_scree_plot(pca):
+    scree = pca.explained_variance_ratio_*100
+    plt.figure(figsize=(18,7), facecolor=PLOT_FIGURE_BAGROUNG_COLOR)
+    plt.bar(np.arange(len(scree))+1, scree)
+    plt.plot(np.arange(len(scree))+1, scree.cumsum(),c="red",marker='o')
+    plt.xlabel("rang de l'axe d'inertie")
+    plt.ylabel("pourcentage d'inertie")
+    plt.title("Eboulis des valeurs propres")
+    plt.show(block=False)
+
+acp_colors = {}
+def display_factorial_planes(X_projected, centres_reduced_df, n_comp, pca, axis_ranks, labels=None, alpha=0.5, illustrative_var=None, ax=None):
+    for d1,d2 in axis_ranks:
+        if d2 < n_comp:
+                    
+            # affichage des points
+            if illustrative_var is None:
+                ax.scatter(X_projected[:, d1], X_projected[:, d2], alpha=alpha)
+            else:
+                illustrative_var = np.array(illustrative_var)
+                for value in np.unique(illustrative_var):
+                    selected = np.where(illustrative_var == value)
+                    ax.scatter(X_projected.loc[selected, "F"+str(d1+1)], X_projected.loc[selected, "F"+str(d2+1)], alpha=alpha, label=value)
+                ax.legend()
+
+            # affichage des labels des points
+            if labels is not None:
+                for i,(x,y) in enumerate(X_projected[:,[d1,d2]]):
+                    ax.text(x, y, labels[i],
+                              fontsize='14', ha='center',va='center') 
+                
+            # détermination des limites du graphique
+            boundary = round(np.max(np.max(np.abs(X_projected.max())), axis=None) * 1.1)
+            ax.set_xticks(range(-boundary,boundary+1))
+            ax.set_yticks(range(-boundary,boundary+1))
+                    
+            # affichage des lignes horizontales et verticales
+            ax.plot([-boundary, boundary], [0, 0], color='grey', ls='--')
+            ax.plot([0, 0], [-boundary, boundary], color='grey', ls='--')
+            
+            ax.scatter(centres_reduced_df["F"+str(d1+1)], centres_reduced_df["F"+str(d2+1)],
+                marker='x', s=169, linewidths=3,
+                color='k', zorder=10)
+
+            # nom des axes, avec le pourcentage d'inertie expliqué
+            ax.set_xlabel('F{} ({}%)'.format(d1+1, round(100*pca.explained_variance_ratio_[d1],1)))
+            ax.set_ylabel('F{} ({}%)'.format(d2+1, round(100*pca.explained_variance_ratio_[d2],1)))
+            ax.set_title("Projection des individus (sur F{} et F{})".format(d1+1, d2+1))
+    return ax
+
+
+def display_factorial_planes_save(X_projected, centres_reduced_df, n_comp, pca, axis_ranks, labels=None, alpha=0.5, illustrative_var=None, ax=None):
+    axes = []
+    for d1,d2 in axis_ranks:
+        if d2 < n_comp:
+ 
+            # initialisation de la figure
+            if ax is None:
+                fig, ax = plt.subplots(figsize=(10,10))
+            axes.append(ax)
+
+            # initialisation de la figure       
+            plt.figure(figsize=(18,15), facecolor=PLOT_FIGURE_BAGROUNG_COLOR)
+        
+            # affichage des points
+            if illustrative_var is None:
+                plt.scatter(X_projected[:, d1], X_projected[:, d2], alpha=alpha)
+            else:
+                illustrative_var = np.array(illustrative_var)
+                for value in np.unique(illustrative_var):
+                    selected = np.where(illustrative_var == value)
+                    plt.scatter(X_projected.loc[selected, "F"+str(d1+1)], X_projected.loc[selected, "F"+str(d2+1)], alpha=alpha, label=value)
+                plt.legend()
+
+            # affichage des labels des points
+            if labels is not None:
+                for i,(x,y) in enumerate(X_projected[:,[d1,d2]]):
+                    plt.text(x, y, labels[i],
+                              fontsize='14', ha='center',va='center') 
+                
+            # détermination des limites du graphique
+            boundary = np.max(np.max(np.abs(X_projected.max())), axis=None) * 1.1
+            plt.xlim([-boundary,boundary])
+            plt.ylim([-boundary,boundary])
+        
+            # affichage des lignes horizontales et verticales
+            plt.plot([-100, 100], [0, 0], color='grey', ls='--')
+            plt.plot([0, 0], [-100, 100], color='grey', ls='--')
+            
+            plt.scatter(centres_reduced_df["F"+str(d1+1)], centres_reduced_df["F"+str(d2+1)],
+                marker='x', s=169, linewidths=3,
+                color='k', zorder=10)
+
+            # nom des axes, avec le pourcentage d'inertie expliqué
+            plt.xlabel('F{} ({}%)'.format(d1+1, round(100*pca.explained_variance_ratio_[d1],1)))
+            plt.ylabel('F{} ({}%)'.format(d2+1, round(100*pca.explained_variance_ratio_[d2],1)))
+            plt.title("Projection des individus (sur F{} et F{})".format(d1+1, d2+1))
+            plt.show()
+
+from matplotlib.collections import LineCollection
+
+def display_circles(pcs, n_comp, pca, axis_ranks, labels=None, label_rotation=0, lims=None, ax=None):
+
+    for d1, d2 in axis_ranks: # On affiche les 3 premiers plans factoriels, donc les 6 premières composantes
+        if d2 < n_comp:
+
+            # détermination des limites du graphique
+            if lims is not None :
+                xmin, xmax, ymin, ymax = lims
+            elif pcs.shape[1] < 30 :
+                xmin, xmax, ymin, ymax = -1, 1, -1, 1
+            else :
+                xmin, xmax, ymin, ymax = min(pcs[d1,:]), max(pcs[d1,:]), min(pcs[d2,:]), max(pcs[d2,:])
+
+            # affichage des flèches
+            # s'il y a plus de 30 flèches, on n'affiche pas le triangle à leur extrémité
+            if pcs.shape[1] < 30 :
+                ax.quiver(np.zeros(pcs.shape[1]), np.zeros(pcs.shape[1]),
+                   pcs[d1,:], pcs[d2,:], 
+                   angles='xy', scale_units='xy', scale=1, color="grey")
+                # (voir la doc : https://matplotlib.org/api/_as_gen/matplotlib.pyplot.quiver.html)
+            else:
+                lines = [[[0,0],[x,y]] for x,y in pcs[[d1,d2]].T]
+                ax.add_collection(LineCollection(lines, axes=ax, alpha=.1, color='black'))
+                ax.set_facecolor(PLOT_BAGROUNG_COLOR)
+            
+            # affichage des noms des variables  
+            if labels is not None:  
+                for i,(x, y) in enumerate(pcs[[d1,d2]].T):
+                    if x >= xmin and x <= xmax and y >= ymin and y <= ymax :
+                        ax.text(x, y, labels[i], fontsize='14', ha='center', va='center', rotation=label_rotation, color="blue", alpha=0.5)
+            
+            # affichage du cercle
+            circle = plt.Circle((0,0), 1, facecolor='none', edgecolor='b')
+            ax.add_artist(circle)
+
+            # définition des limites du graphique
+            ax.set_yticks(range(ymin, ymax+1))
+            ax.set_xticks(range(xmin, xmax+1))
+            
+            # affichage des lignes horizontales et verticales
+            ax.plot([-1, 1], [0, 0], color='grey', ls='--')
+            ax.plot([0, 0], [-1, 1], color='grey', ls='--')
+
+            # nom des axes, avec le pourcentage d'inertie expliqué
+            ax.set_xlabel('F{} ({}%)'.format(d1+1, round(100*pca.explained_variance_ratio_[d1],1)))
+            ax.set_ylabel('F{} ({}%)'.format(d2+1, round(100*pca.explained_variance_ratio_[d2],1)))
+            ax.set_title("Cercle des corrélations (F{} et F{})".format(d1+1, d2+1))
+    return ax
+
+def display_circles_old(pcs, n_comp, pca, axis_ranks, labels=None, label_rotation=0, lims=None):
+
+    axes = []
+
+    for d1, d2 in axis_ranks: # On affiche les 3 premiers plans factoriels, donc les 6 premières composantes
+        if d2 < n_comp:
+
+            # initialisation de la figure
+            fig, ax = plt.subplots(figsize=(10,10))
+            axes.append(ax)
+            # détermination des limites du graphique
+            if lims is not None :
+                xmin, xmax, ymin, ymax = lims
+            elif pcs.shape[1] < 30 :
+                xmin, xmax, ymin, ymax = -1, 1, -1, 1
+            else :
+                xmin, xmax, ymin, ymax = min(pcs[d1,:]), max(pcs[d1,:]), min(pcs[d2,:]), max(pcs[d2,:])
+
+            # affichage des flèches
+            # s'il y a plus de 30 flèches, on n'affiche pas le triangle à leur extrémité
+            if pcs.shape[1] < 30 :
+                plt.quiver(np.zeros(pcs.shape[1]), np.zeros(pcs.shape[1]),
+                   pcs[d1,:], pcs[d2,:], 
+                   angles='xy', scale_units='xy', scale=1, color="grey")
+                # (voir la doc : https://matplotlib.org/api/_as_gen/matplotlib.pyplot.quiver.html)
+            else:
+                lines = [[[0,0],[x,y]] for x,y in pcs[[d1,d2]].T]
+                ax.add_collection(LineCollection(lines, axes=ax, alpha=.1, color='black'))
+                ax.set_facecolor(PLOT_BAGROUNG_COLOR)
+            
+            # affichage des noms des variables  
+            if labels is not None:  
+                for i,(x, y) in enumerate(pcs[[d1,d2]].T):
+                    if x >= xmin and x <= xmax and y >= ymin and y <= ymax :
+                        plt.text(x, y, labels[i], fontsize='14', ha='center', va='center', rotation=label_rotation, color="blue", alpha=0.5)
+            
+            # affichage du cercle
+            circle = plt.Circle((0,0), 1, facecolor='none', edgecolor='b')
+            plt.gca().add_artist(circle)
+
+            # définition des limites du graphique
+            plt.xlim(xmin, xmax)
+            plt.ylim(ymin, ymax)
+            # affichage des lignes horizontales et verticales
+            plt.plot([-1, 1], [0, 0], color='grey', ls='--')
+            plt.plot([0, 0], [-1, 1], color='grey', ls='--')
+
+            # nom des axes, avec le pourcentage d'inertie expliqué
+            plt.xlabel('F{} ({}%)'.format(d1+1, round(100*pca.explained_variance_ratio_[d1],1)))
+            plt.ylabel('F{} ({}%)'.format(d2+1, round(100*pca.explained_variance_ratio_[d2],1)))
+
+            fig.patch.set_facecolor(PLOT_FIGURE_BAGROUNG_COLOR)
+            plt.title("Cercle des corrélations (F{} et F{})".format(d1+1, d2+1))
+            # plt.show(block=False)
+    return axes
+
+
+def display_factorial_planes_by_theme(X_projected,pca, n_comp, axis_ranks, alpha=0.5, illustrative_var=None, by_theme=False):
+    axes = []
+    for d1,d2 in axis_ranks:
+        if d2 < n_comp:
+            # affichage des points
+            illustrative_var = np.array(illustrative_var)
+            valil = np.unique(illustrative_var)
+
+            figure, axes = plt.subplots(2,len(valil)//2)
+
+            # détermination des limites du graphique
+            boundary = np.max(np.abs(X_projected[:, [d1,d2]])) * 1.1
+            
+            # On commence par traiter le NAN pour plus de lisibilité dans le graphe
+            value = str(np.nan)
+            i = 0
+            j = 0
+            if value in valil :
+                _display_one_scatter(X_projected, pca, axes[i][j], value, d1, d2, alpha,boundary, illustrative_var)
+                valil = valil[valil != value]
+                j += 1
+            
+            for value in valil:
+                _display_one_scatter(X_projected, pca, axes[i][j], value, d1, d2, alpha,boundary, illustrative_var)
+                
+                j += 1
+                if j > (len(valil)//2):
+                    i += 1
+                    j = 0
+            
+            figure.set_size_inches(18.5, 7, forward=True)
+            figure.set_dpi(100)
+            figure.patch.set_facecolor(PLOT_FIGURE_BAGROUNG_COLOR)
+            figure.suptitle("Projection des individus (sur F{} et F{})".format(d1+1, d2+1))
+            plt.show(block=False)
+
+def _display_one_scatter(X_projected, pca, axe,value, d1, d2, alpha, boundary, illustrative_var):
+    selected = np.where(illustrative_var == value)
+    c=acp_colors.get(value, "blue")
+    axe.scatter(X_projected[selected, d1], X_projected[selected, d2], alpha=alpha, label=value, c=c, s=100)
+    axe.legend()
+    # nom des axes, avec le pourcentage d'inertie expliqué
+    axe.set_xlabel('F{} ({}%)'.format(d1+1, round(100*pca.explained_variance_ratio_[d1],1)))
+    axe.set_ylabel('F{} ({}%)'.format(d2+1, round(100*pca.explained_variance_ratio_[d2],1)))
+
+    axe.set_xlim([-boundary,boundary])
+    axe.set_ylim([-boundary,boundary])
+    # affichage des lignes horizontales et verticales
+    axe.plot([-100, 100], [0, 0], color='grey', ls='--')
+    axe.plot([0, 0], [-100, 100], color='grey', ls='--')
+    axe.set_facecolor(PLOT_BAGROUNG_COLOR)
+
+
+from pandas.plotting import parallel_coordinates
+
+def addAlpha(colour, alpha):
+    '''Add an alpha to the RGB colour'''
+    
+    return (colour[0],colour[1],colour[2],alpha)
+
+def display_parallel_coordinates(df, num_clusters):
+    '''Display a parallel coordinates plot for the clusters in df'''
+    palette = sns.color_palette("bright", 10)
+
+    # Select data points for individual clusters
+    cluster_points = []
+    for i in range(num_clusters):
+        cluster_points.append(df[df.cluster==i])
+
+    # Create the plot
+    fig = plt.figure(figsize=(20, 15))
+    fig.suptitle("Parallel Coordinates Plot for the Clusters", fontsize=18)
+    fig.subplots_adjust(top=0.95, wspace=0)
+
+    # Display one plot for each cluster, with the lines for the main cluster appearing over the lines for the other clusters
+    for i in range(num_clusters):    
+        plt.subplot(num_clusters, 1, i+1)
+        for j,c in enumerate(cluster_points): 
+            if i!= j:
+                parallel_coordinates(c, 'cluster', color=[addAlpha(palette[j],0.2)])
+        parallel_coordinates(cluster_points[i], 'cluster', color=[addAlpha(palette[i],0.7)])
+
+        # Stagger the axes
+        ax=plt.gca()
+        for tick in ax.xaxis.get_major_ticks()[1::2]:
+            tick.set_pad(20) 
+
+def display_parallel_coordinates_centroids(df, num_clusters):
+    '''Display a parallel coordinates plot for the centroids in df'''
+    palette = sns.color_palette("bright", 10)
+    # Create the plot
+    fig = plt.figure(figsize=(20, 5))
+    fig.suptitle("Parallel Coordinates plot for the Centroids", fontsize=18)
+    fig.subplots_adjust(top=0.9, wspace=0)
+
+    # Draw the chart
+    parallel_coordinates(df, 'cluster', color=palette)
+
+    # Stagger the axes
+    ax=plt.gca()
+    for tick in ax.xaxis.get_major_ticks()[1::2]:
+        tick.set_pad(20) 
+
 # ----------------------------------------------------------------------------------
 #                        GRAPHIQUES
 # ----------------------------------------------------------------------------------
@@ -954,7 +1329,7 @@ def draw_correlation_graphe(df, title, verbose=False, annot=True, fontsize=5):
         df (DataFrame): Données à représenter
         verbose (bool, optional): Mode debug. Defaults to False.
     """
-    corr_df = df.corr()
+    corr_df = round(df.corr(), 2)
     if verbose:
         print("CORR ------------------")
         print(corr_df, "\n")
@@ -967,6 +1342,226 @@ def draw_correlation_graphe(df, title, verbose=False, annot=True, fontsize=5):
     plt.yticks(fontsize=fontsize)
     plt.show()
 
+
+import plotly.graph_objs as go
+import plotly.express as px
+
+def draw_top_score(score_only_by_country_t, n_top = 10,markers=True, verbose=0):
+
+    countries_cols = list(score_only_by_country_t.columns)[0:n_top]
+
+    fig = px.line(score_only_by_country_t[countries_cols], markers=markers, title=f"Evolution des scores du top {n_top} (sur la moyenne).")
+    fig.update_layout(
+        yaxis_title="Score",
+        legend_title=f"{n_top} pays avec le meilleur score",
+    )
+    fig.update_layout(margin=dict(l=10, r=20, t=40, b=20))
+    fig.update_layout(xaxis = go.layout.XAxis( tickangle = 45) )
+    fig.update_xaxes(dtick=1)
+    fig.show()
+
+from plotly.subplots import make_subplots
+
+def draw_top_by_country_score(score_only_by_country_t, n_top = 5, verbose=0):
+    
+    countries_names = list(score_only_by_country_t.columns)
+
+    sub_plot_title = []
+    i = 1
+    for tit in countries_names[0:n_top]:
+        sub_plot_title.append(str(i) + " - " + tit)
+        i += 1
+
+    years = list(score_only_by_country_t.index)
+    fig = make_subplots(rows=n_top+1, cols=1, subplot_titles=tuple(sub_plot_title))
+    fig.update_annotations(font_size=12)
+
+    for i in range(0, n_top):
+        y = score_only_by_country_t[countries_names[i]]
+        sub_fig = go.Scatter(x=years, y=y, name = sub_plot_title[i], showlegend=False)
+        fig.add_trace(sub_fig, row=i+1, col=1)
+
+    fig.update_layout(height=200*n_top, width=1000, title_text=f"Evolution des scores pour le top {n_top} des pays")
+    fig.update_xaxes(dtick=1)
+    fig.update_yaxes(nticks=10, dtick=0.1)
+    fig.show()
+
+from sklearn.preprocessing import StandardScaler
+
+def draw_country_data_evolution(df, country_official_name):
+    df_country = get_df_for_country_data(df, country_official_name=country_official_name)
+    # Standardisation des features
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(df_country[get_numeric_columns_names(df_country)])
+    df_country_std =pd.DataFrame(scaled_features, index=df_country.index, columns=get_numeric_columns_names(df_country))
+    fig = px.line(df_country_std, markers=True, title=f"{country_official_name}")
+    fig.update_layout(
+        yaxis_title=None,
+        xaxis_title="Années",
+        legend_title="Données",
+    )
+    fig.update_layout(margin=dict(l=10, r=20, t=40, b=10))
+    fig.update_xaxes(dtick=1)
+    fig.show()
+    return fig, df_country, df_country_std
+
+
+def draw_kmeans_features_3d(df, features, verbose=0):
+    fig = px.scatter_3d(x=df[features[0]], y=df[features[1]], z=df[features[2]], color=df["kmeans_cluster"], title=f'K-Means Clustering pour les features {features}.')
+    fig.update_layout(margin=dict(l=10, r=20, t=40, b=10))
+    fig.update_layout(
+            xaxis_title=features[0],
+            yaxis_title=features[1],
+        )
+    fig.show()
+
+import matplotlib.cm as cm
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples, silhouette_score
+
+def draw_silhouette_curve(df, X, nb_clusters, random_state=42, x_col = (5, "Score"), y_col=(6, "PIB"), verbose=0):
+    
+    silhouette_n_clusters = []
+
+    for n_clusters in nb_clusters:
+        # Entrainement du modèle
+        clusterer = KMeans(n_clusters=n_clusters, random_state=random_state)
+        cluster_labels = clusterer.fit_predict(X)
+
+        # Calcul du score silhouette
+        silhouette_scr = round(silhouette_score(X, cluster_labels),2)
+        if verbose:
+            print(f"{n_clusters} clusters = {silhouette_scr} silhouette_score")
+
+        silhouette_n_clusters.append(silhouette_scr)
+        sample_silhouette_values = silhouette_samples(X, cluster_labels)
+
+        # Représentation graphique
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig.set_size_inches(18, 7)
+        ax1.set_xlim([-0.1, 1])
+        ax1.set_ylim([0, len(X) + (n_clusters + 1) * 10])
+
+        y_lower = 10
+        for i in range(n_clusters):
+            ith_cluster_silhouette_values = sample_silhouette_values[cluster_labels == i]
+            ith_cluster_silhouette_values.sort()
+
+            size_cluster_i = ith_cluster_silhouette_values.shape[0]
+            y_upper = y_lower + size_cluster_i
+
+            color = cm.nipy_spectral(float(i) / n_clusters)
+            ax1.fill_betweenx(np.arange(y_lower, y_upper),
+                            0, ith_cluster_silhouette_values,
+                            facecolor=color, edgecolor=color, alpha=0.7)
+
+            ax1.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+            y_lower = y_upper + 10
+            
+        # Graphique 1
+        ax1.set_title(f"The silhouette plot for the various clusters 0 to {n_clusters}.")
+        ax1.set_xlabel("The silhouette coefficient values")
+        ax1.set_ylabel("Cluster label")
+
+        ax1.axvline(x=silhouette_scr, color="red", linestyle="--")
+
+        ax1.set_yticks([])  
+        ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
+
+        # Graphique 2
+        colors = cm.nipy_spectral(cluster_labels.astype(float) / n_clusters)
+        
+        ax2.scatter(df.iloc[::,x_col[0]], df.iloc[::,y_col[0]], marker='.', s=30, lw=0, alpha=0.7,
+                    c=colors, edgecolor='k')
+
+        # centroides
+        centers = clusterer.cluster_centers_
+        ax2.scatter(centers[:, 0], centers[:, 1], marker='o',
+                    c="white", alpha=1, s=200, edgecolor='k')
+
+        for i, c in enumerate(centers):
+            ax2.scatter(c[0], c[1], marker='$%d$' % i, alpha=1,
+                        s=50, edgecolor='k')
+
+        ax2.set_title("Visualisation des clusters sur le dataset")
+        ax2.set_xlabel(x_col[1])
+        ax2.set_ylabel(y_col[1])
+
+        plt.suptitle(f"Silhouette analysis for KMeans clustering on sample data with n_clusters = {n_clusters}",
+                    fontsize=14, fontweight='bold')
+        plt.show()
+    
+    # Dernier graphe avec la silhouette
+    fig = px.line(x=nb_clusters, y=silhouette_n_clusters , markers=True, title=f"Score silhouette par rapport au nombre de clusters")
+    fig.update_layout(
+        xaxis_title="Number of Clusters (k)",
+        yaxis_title="Silhouette score",
+    )
+    fig.update_layout(margin=dict(l=10, r=20, t=40, b=10))
+    fig.update_xaxes(dtick=1)
+    fig.show()
+
+    return silhouette_n_clusters
+
+from sklearn.cluster import DBSCAN
+from sklearn.metrics import adjusted_rand_score
+
+def draw_kmeans_and_DBSCAN_comparison(X_scale, nb_clusters, features_column_name=["PIB", "Soutien"], verbose=0):
+    
+    fte_colors = {
+            0: "#008fd5",
+            1: "#fc4f30",
+            2: "#FF1493",
+            3: "#006400",
+            4: "#FFD700",
+            5: "#B8860B",
+            6: "#008B8B",
+            7: "#FF7F50",
+            8: "#B22222",
+            9: "#FF00FF",
+            10: "#4169E1"
+            }
+
+    for nb_cluster in nb_clusters:
+
+        # Plot the data and cluster silhouette comparison
+        fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True)
+        fig.suptitle(f"Clustering Algorithm Comparison: Crescents", fontsize=16)
+
+        # The k-means plot
+        kmeans = KMeans(n_clusters=nb_cluster)
+        # Fit the algorithms to the features
+        kmeans.fit(X_scale)
+        # Compute the silhouette scores for each algorithm
+        kmeans_silhouette = silhouette_score(X_scale, kmeans.labels_).round(2)
+        km_colors = [fte_colors.get(label,"#696969") for label in kmeans.labels_]
+        ax1.scatter(X_scale[features_column_name[0]], X_scale[features_column_name[1]], c=km_colors)
+        ax1.set_title(f"{nb_cluster} clusters k-means\nSilhouette: {kmeans_silhouette}", fontdict={"fontsize": 12})
+        ax1.set_xlabel(features_column_name[0])
+        ax1.set_ylabel(features_column_name[1])
+
+        # The dbscan plot
+        try:
+            # Instantiate dbscan algorithms
+            dbscan = DBSCAN(eps=(nb_cluster/10))
+            # Fit the algorithms to the features
+            dbscan.fit(X_scale)
+            dbscan_silhouette = silhouette_score(X_scale, dbscan.labels_).round(2)
+            db_colors = [fte_colors.get(label,"#696969") for label in dbscan.labels_]
+            ax2.scatter(X_scale[features_column_name[0]], X_scale[features_column_name[1]], c=db_colors)
+            ax2.set_title(f"{nb_cluster} clusters DBSCAN\nSilhouette: {dbscan_silhouette}", fontdict={"fontsize": 12})
+            ax2.set_xlabel(features_column_name[0])
+            ax2.set_ylabel(features_column_name[1])
+        except Exception as error:
+            if verbose:
+                print(f"ERROR : {nb_cluster} clusters : dbscan_silhouette = {error}")
+        if verbose:
+            try:
+                print(f"{nb_cluster} clusters : kmeans_silhouette = {kmeans_silhouette} <> dbscan_silhouette = {dbscan_silhouette}")
+            except:
+                pass
+        fig.set_size_inches(18, 7, forward=True)
+        plt.show()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                                              TESTS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
